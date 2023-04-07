@@ -1,43 +1,114 @@
-# Example file showing a circle moving on screen
 import pygame
+import sys
 
-# pygame setup
+# Initialize Pygame
 pygame.init()
-screen = pygame.display.set_mode((1280, 720))
+
+# Constants
+SCREEN_WIDTH = 800
+SCREEN_HEIGHT = 600
+GRAVITY = 0.8
+PLAYER_JUMP_FORCE = 20
+PLAYER_MOVE_SPEED = 5
+
+# Create the screen
+screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+pygame.display.set_caption("Flipping Platformer")
+
+# Load the player image and get its rect
+player_image = pygame.image.load("player.png")
+player_rect = player_image.get_rect()
+
+# Set the player's initial position and velocity
+player_rect.centerx = SCREEN_WIDTH // 2
+player_rect.bottom = SCREEN_HEIGHT - 30
+player_velocity = pygame.math.Vector2(0, 0)
+
+# Load the level data
+level_data = [
+    "--------------------",
+    "-                  -",
+    "-                  -",
+    "-                  -",
+    "-                  -",
+    "-                  -",
+    "-                  -",
+    "-                  -",
+    "-                  -",
+    "-                  -",
+    "-                  -",
+    "--------------------"
+]
+
+# Create the platforms
+platforms = []
+for row_index, row in enumerate(level_data):
+    for col_index, col in enumerate(row):
+        if col == "-":
+            platform_rect = pygame.Rect(
+                col_index * 40, row_index * 40, 40, 40)
+            platforms.append(platform_rect)
+
+# Start the game loop
 clock = pygame.time.Clock()
-running = True
-dt = 0
-
-player_pos = pygame.Vector2(screen.get_width() / 2, screen.get_height() / 2)
-
-while running:
-    # poll for events
-    # pygame.QUIT event means the user clicked X to close your window
+while True:
+    # Handle events
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
-            running = False
+            pygame.quit()
+            sys.exit()
 
-    # fill the screen with a color to wipe away anything from last frame
-    screen.fill("purple")
-
-    pygame.draw.circle(screen, "red", player_pos, 40)
-
+    # Move the player
     keys = pygame.key.get_pressed()
-    if keys[pygame.K_w]:
-        player_pos.y -= 300 * dt
-    if keys[pygame.K_s]:
-        player_pos.y += 300 * dt
-    if keys[pygame.K_a]:
-        player_pos.x -= 300 * dt
-    if keys[pygame.K_d]:
-        player_pos.x += 300 * dt
+    if keys[pygame.K_LEFT]:
+        player_velocity.x = -PLAYER_MOVE_SPEED
+    elif keys[pygame.K_RIGHT]:
+        player_velocity.x = PLAYER_MOVE_SPEED
+    else:
+        player_velocity.x = 0
 
-    # flip() the display to put your work on screen
+    # Apply gravity
+    player_velocity.y += GRAVITY
+
+    # Handle player jumping
+    if player_rect.bottom >= SCREEN_HEIGHT:
+        if keys[pygame.K_SPACE]:
+            player_velocity.y = -PLAYER_JUMP_FORCE
+
+    # Update the player's position
+    player_rect.move_ip(player_velocity.x, player_velocity.y)
+
+    # Keep player inside screen boundaries
+    if player_rect.left < 0:
+        player_rect.left = 0
+    elif player_rect.right > SCREEN_WIDTH:
+        player_rect.right = SCREEN_WIDTH
+
+    # Check for collision with platforms
+    for platform in platforms:
+        if player_rect.colliderect(platform):
+            # Player is colliding with platform
+            if player_velocity.y > 0:
+                # Player is falling, so set their position to the top of the platform
+                player_rect.bottom = platform.top
+                player_velocity.y = 0
+            elif player_velocity.y < 0:
+                # Player is jumping and hit the bottom of the platform, so set their position to the bottom of the platform
+                player_rect.top = platform.bottom
+                player_velocity.y = 0
+            if player_rect.left <= 0:
+                player_rect.left = 0
+            elif player_rect.right >= SCREEN_WIDTH:
+                player_rect.right = SCREEN_WIDTH    
+
+    # Draw everything
+    screen.fill((255, 255, 255))
+    for platform in platforms:
+        pygame.draw.rect(screen, (0, 0, 0), platform)
+    screen.blit(player_image, player_rect)
+
+    # Flip the display
     pygame.display.flip()
 
-    # limits FPS to 60
-    # dt is delta time in seconds since last frame, used for framerate-
-    # independent physics.
-    dt = clock.tick(60) / 1000
-
-pygame.quit()
+    # Wait for the next frame
+    clock.tick(60)
