@@ -18,9 +18,19 @@ PLAYER_VEL = 5
 
 window = pygame.display.set_mode((WIDTH, HEIGHT))
 
-## Using Sprite objects for pixel-perfect collision
+def flip(sprites):
+    return[pygame.transform.flip(sprite, True, False) for sprite in sprites]
+
+def load_sprite_sheets(player_name, width, height, direction=False):
+    path = join("assets", "wf_players", player_name)
+    
+
+
+
+## Using Sprite objects for pixel-perfect collision and animations
 class Player(pygame.sprite.Sprite):
     COLOR = (255, 0, 0)
+    GRAVITY = 1.2
     
     def __init__(self, x, y, width, height):
         self.rect = pygame.Rect(x, y, width, height)
@@ -28,7 +38,7 @@ class Player(pygame.sprite.Sprite):
         self.y_vel = 0
         self.mask = None
         self.direction = "left"
-        self.animation_count = 0
+        self.fall_count = 0
 
     def move(self, dx, dy):
         self.rect.x += dx
@@ -41,13 +51,15 @@ class Player(pygame.sprite.Sprite):
             self.animation_count = 0
 
     def move_right(self, vel):
-        self.y_vel =- vel
+        self.x_vel =+ vel
         if self.direction != "right":
             self.direction = "right"
             self.animation_count = 0
 
     def loop(self, fps):
+        self.y_vel += min(1, (self.fall_count / fps) * self.GRAVITY)
         self.move(self.x_vel, self.y_vel)
+        self.fall_count += 1
 
     def draw(self, win):
         pygame.draw.rect(win, self.COLOR, self.rect)
@@ -55,7 +67,7 @@ class Player(pygame.sprite.Sprite):
 
 
 def get_background(name):
-    image = pygame.image.load(join("assets", "Base pack", name))
+    image = pygame.image.load(join("assets", "wf_background", name))
     _, _, width, height = image.get_rect()
     tiles = []
 
@@ -72,9 +84,17 @@ def draw(window, background, bg_image, player):
         window.blit(bg_image, tile)
 
     player.draw(window)
-    
+
     pygame.display.update()
 
+def handle_move(player):
+    keys = pygame.key.get_pressed()
+
+    player.x_vel = 0
+    if keys[pygame.K_a]:
+        player.move_left(PLAYER_VEL)
+    if keys[pygame.K_d]:
+        player.move_right(PLAYER_VEL)
 
 ## Main ####
 def main(window):
@@ -91,6 +111,9 @@ def main(window):
             if event.type == pygame.QUIT:
                 run = False
                 break
+        
+        player.loop(FPS)
+        handle_move(player)
 
         draw(window, background, bg_image, player)
     
