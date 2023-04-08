@@ -1,114 +1,103 @@
 import pygame
 import sys
+import os
+import random
+import math
+from os import listdir
+from os.path import isfile, join
 
-# Initialize Pygame
 pygame.init()
 
-# Constants
-SCREEN_WIDTH = 800
-SCREEN_HEIGHT = 600
-GRAVITY = 0.8
-PLAYER_JUMP_FORCE = 20
-PLAYER_MOVE_SPEED = 5
+pygame.display.set_caption("World Flip")
 
-# Create the screen
-screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-pygame.display.set_caption("Flipping Platformer")
+## Global Variables
+BG_COLOR = (255, 255, 255)
+WIDTH, HEIGHT = 1000, 800
+FPS = 60
+PLAYER_VEL = 5
 
-# Load the player image and get its rect
-player_image = pygame.image.load("player.png")
-player_rect = player_image.get_rect()
+window = pygame.display.set_mode((WIDTH, HEIGHT))
 
-# Set the player's initial position and velocity
-player_rect.centerx = SCREEN_WIDTH // 2
-player_rect.bottom = SCREEN_HEIGHT - 30
-player_velocity = pygame.math.Vector2(0, 0)
+## Using Sprite objects for pixel-perfect collision
+class Player(pygame.sprite.Sprite):
+    COLOR = (255, 0, 0)
+    
+    def __init__(self, x, y, width, height):
+        self.rect = pygame.Rect(x, y, width, height)
+        self.x_vel = 0
+        self.y_vel = 0
+        self.mask = None
+        self.direction = "left"
+        self.animation_count = 0
 
-# Load the level data
-level_data = [
-    "--------------------",
-    "-                  -",
-    "-                  -",
-    "-                  -",
-    "-                  -",
-    "-                  -",
-    "-                  -",
-    "-                  -",
-    "-                  -",
-    "-                  -",
-    "-                  -",
-    "--------------------"
-]
+    def move(self, dx, dy):
+        self.rect.x += dx
+        self.rect.y += dy
 
-# Create the platforms
-platforms = []
-for row_index, row in enumerate(level_data):
-    for col_index, col in enumerate(row):
-        if col == "-":
-            platform_rect = pygame.Rect(
-                col_index * 40, row_index * 40, 40, 40)
-            platforms.append(platform_rect)
+    def move_left(self, vel):
+        self.x_vel =- vel
+        if self.direction != "left":
+            self.direction = "left"
+            self.animation_count = 0
 
-# Start the game loop
-clock = pygame.time.Clock()
-while True:
-    # Handle events
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            pygame.quit()
-            sys.exit()
+    def move_right(self, vel):
+        self.y_vel =- vel
+        if self.direction != "right":
+            self.direction = "right"
+            self.animation_count = 0
 
-    # Move the player
-    keys = pygame.key.get_pressed()
-    if keys[pygame.K_LEFT]:
-        player_velocity.x = -PLAYER_MOVE_SPEED
-    elif keys[pygame.K_RIGHT]:
-        player_velocity.x = PLAYER_MOVE_SPEED
-    else:
-        player_velocity.x = 0
+    def loop(self, fps):
+        self.move(self.x_vel, self.y_vel)
 
-    # Apply gravity
-    player_velocity.y += GRAVITY
+    def draw(self, win):
+        pygame.draw.rect(win, self.COLOR, self.rect)
+    
 
-    # Handle player jumping
-    if player_rect.bottom >= SCREEN_HEIGHT:
-        if keys[pygame.K_SPACE]:
-            player_velocity.y = -PLAYER_JUMP_FORCE
 
-    # Update the player's position
-    player_rect.move_ip(player_velocity.x, player_velocity.y)
+def get_background(name):
+    image = pygame.image.load(join("assets", "Base pack", name))
+    _, _, width, height = image.get_rect()
+    tiles = []
 
-    # Keep player inside screen boundaries
-    if player_rect.left < 0:
-        player_rect.left = 0
-    elif player_rect.right > SCREEN_WIDTH:
-        player_rect.right = SCREEN_WIDTH
+    for i in range(WIDTH // width + 1):
+        for j in range(HEIGHT // height + 1):
+            pos = (i*width, j*height)
+            tiles.append(pos)
 
-    # Check for collision with platforms
-    for platform in platforms:
-        if player_rect.colliderect(platform):
-            # Player is colliding with platform
-            if player_velocity.y > 0:
-                # Player is falling, so set their position to the top of the platform
-                player_rect.bottom = platform.top
-                player_velocity.y = 0
-            elif player_velocity.y < 0:
-                # Player is jumping and hit the bottom of the platform, so set their position to the bottom of the platform
-                player_rect.top = platform.bottom
-                player_velocity.y = 0
-            if player_rect.left <= 0:
-                player_rect.left = 0
-            elif player_rect.right >= SCREEN_WIDTH:
-                player_rect.right = SCREEN_WIDTH    
+    return tiles, image
 
-    # Draw everything
-    screen.fill((255, 255, 255))
-    for platform in platforms:
-        pygame.draw.rect(screen, (0, 0, 0), platform)
-    screen.blit(player_image, player_rect)
 
-    # Flip the display
-    pygame.display.flip()
+def draw(window, background, bg_image, player):
+    for tile in background:
+        window.blit(bg_image, tile)
 
-    # Wait for the next frame
-    clock.tick(60)
+    player.draw(window)
+    
+    pygame.display.update()
+
+
+## Main ####
+def main(window):
+    clock = pygame.time.Clock()
+    background, bg_image = get_background("bg_castle.png")
+
+    player = Player(100, 100, 50, 50)
+
+    run = True
+    while run:
+        clock.tick(FPS)
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                run = False
+                break
+
+        draw(window, background, bg_image, player)
+    
+    pygame.quit()
+    quit()
+
+## End of Main ##
+
+if __name__ == "__main__":
+    main(window)
