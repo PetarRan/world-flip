@@ -47,10 +47,10 @@ def load_sprite_sheets(player_name, width, height, direction=False):
 
 
 def get_block(size):
-    path = join("assets", "wf_terrain", "tiles.png")
+    path = join("assets", "wf_terrain", "tiles_terrain.png")
     image = pygame.image.load(path).convert_alpha()
     surface = pygame.Surface((size, size), pygame.SRCALPHA, 32)
-    rect = pygame.Rect(80, 0, size, size)
+    rect = pygame.Rect(576, 288, size, size) #576 - [pos of tile block]
     surface.blit(image, (0, 0), rect)
     return pygame.transform.scale2x(surface)
 
@@ -72,6 +72,14 @@ class Player(pygame.sprite.Sprite):
         self.direction = "right"
         self.animation_count = 0
         self.fall_count = 0
+        self.jump_count = 0
+
+    def jump(self):
+        self.y_vel = -self.GRAVITY * 8
+        self.animation_count = 0
+        self.jump_count += 1
+        if self.jump_count == 1:
+            self.fall_count = 0
 
     def move(self, dx, dy):
         self.rect.x += dx
@@ -95,8 +103,25 @@ class Player(pygame.sprite.Sprite):
         self.fall_count += 1
         self.update_sprite()
 
+    def landed(self):
+        self.fall_count = 0
+        self.y_vel = 0
+        self.jump_count = 0
+    
+    def hithead(self):
+        self.count = 0
+        self.y_vel *= -1
+
+
     def update_sprite(self):
         sprite_sheet = "idle"
+        if self.y_vel < 0:
+            if self.jump_count == 1:
+                sprite_sheet = "jump"
+            elif self.jump_count == 2:
+                sprite_sheet = "double_jump"
+        elif self.y_vel > self.GRAVITY * 2:
+            sprite_sheet = "fall"
         if self.x_vel != 0:
             sprite_sheet = "move"
         sprite_sheet_name = sprite_sheet + "_" + self.direction
@@ -162,7 +187,22 @@ def draw(window, background, bg_image, player, objects):
     pygame.display.update()
 
 
-def handle_move(player):
+def handle_vertical_collision(player, objects, dy):
+    collided_objects = []
+    for obj in objects:
+        if pygame.sprite.collide_mask(player, obj):
+            if dy > 0:
+                player.rect.bottom = obj.rect.top
+                player.landed()
+            elif dy < 0:
+                player.rect.top = obj.rect.bottom
+                player.hithead()
+        
+        collided_objects.append(obj)
+
+    return collided_objects
+
+def handle_move(player, objects):
     keys = pygame.key.get_pressed()
 
     player.x_vel = 0
@@ -170,6 +210,8 @@ def handle_move(player):
         player.move_left(PLAYER_VEL)
     if keys[pygame.K_d]:
         player.move_right(PLAYER_VEL)
+    
+    handle_vertical_collision(player, objects, player.y_vel)
 
 ## Main ####
 
@@ -177,7 +219,7 @@ def handle_move(player):
 def main(window):
     clock = pygame.time.Clock()
     background, bg_image = get_background("bg.jpg")
-    block_size = 8
+    block_size = 140
 
     player = Player(100, 100, 50, 50)
     floor = [Block(i*block_size, HEIGHT - block_size, block_size)
@@ -191,9 +233,12 @@ def main(window):
             if event.type == pygame.QUIT:
                 run = False
                 break
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_w and player.jump_count < 2:
+                    player.jump()
 
         player.loop(FPS)
-        handle_move(player)
+        handle_move(player, floor)
 
         draw(window, background, bg_image, player, floor)
 
