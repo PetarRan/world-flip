@@ -45,6 +45,15 @@ def load_sprite_sheets(player_name, width, height, direction=False):
 
     return all_sprites
 
+
+def get_block(size):
+    path = join("assets", "wf_terrain", "tiles.png")
+    image = pygame.image.load(path).convert_alpha()
+    surface = pygame.Surface((size, size), pygame.SRCALPHA, 32)
+    rect = pygame.Rect(80, 0, size, size)
+    surface.blit(image, (0, 0), rect)
+    return pygame.transform.scale2x(surface)
+
 # Using Sprite objects for pixel-perfect collision and animations
 
 
@@ -106,6 +115,7 @@ class Player(pygame.sprite.Sprite):
 
 # Objects on the screen (i.e. platforms)
 
+
 class Object(pygame.sprite.Sprite):
     def __init__(self, x, y, width, height, name=None):
         super().__init__()
@@ -117,6 +127,14 @@ class Object(pygame.sprite.Sprite):
 
     def draw(self, win):
         win.blit(self.image, (self.rect.x, self.rect.y))
+
+
+class Block(Object):
+    def __init__(self, x, y, size):
+        super().__init__(x, y, size, size)
+        block = get_block(size)
+        self.image.blit(block, (0, 0))
+        self.mask = pygame.mask.from_surface(self.image)
 
 
 def get_background(name):
@@ -132,9 +150,12 @@ def get_background(name):
     return tiles, image
 
 
-def draw(window, background, bg_image, player):
+def draw(window, background, bg_image, player, objects):
     for tile in background:
         window.blit(bg_image, tile)
+
+    for platform in objects:
+        platform.draw(window)
 
     player.draw(window)
 
@@ -156,8 +177,11 @@ def handle_move(player):
 def main(window):
     clock = pygame.time.Clock()
     background, bg_image = get_background("bg.jpg")
+    block_size = 8
 
     player = Player(100, 100, 50, 50)
+    floor = [Block(i*block_size, HEIGHT - block_size, block_size)
+             for i in range(-WIDTH // block_size, WIDTH * 2 // block_size)]
 
     run = True
     while run:
@@ -171,7 +195,7 @@ def main(window):
         player.loop(FPS)
         handle_move(player)
 
-        draw(window, background, bg_image, player)
+        draw(window, background, bg_image, player, floor)
 
     pygame.quit()
     quit()
