@@ -72,7 +72,7 @@ class Player(pygame.sprite.Sprite):
 
     def hithead(self):
         self.count = 0
-        self.y_vel *= -1
+        self.y_vel *= -0.3
 
     def update_sprite(self):
         sprite_sheet = "idle"

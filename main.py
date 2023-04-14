@@ -117,8 +117,24 @@ def main(window):
     spikes = Danger(100, HEIGHT - block_size - 140, 70, 70)
     spikes.on()
     floor = [Block(i*block_size, HEIGHT - block_size, block_size)
-             for i in range(-WIDTH // block_size, WIDTH * 2 // block_size)]
-    objects = [*floor, Block(0, HEIGHT-block_size*3, block_size), spikes]
+             for i in range(5)]
+
+    wall = []
+    for i in range(3):
+        block = floor[i]
+        rotated_block = Block(block.rect.x + 750, block.rect.y - 380, block_size)
+        rotated_block.image =  pygame.transform.rotate(block.image, 90)
+        if i == 0:
+            wall.append(rotated_block)
+        else:
+            prev_block = wall[i-1]
+            offset_y = prev_block.rect.y - 3*block_size
+            new_block = Block(rotated_block.rect.x - i * block_size, rotated_block.rect.y + offset_y, block_size)
+            new_block.image = rotated_block.image
+            wall.append(new_block)
+
+    
+    objects = [*floor, *wall]
 
     offset_x = 0
     scroll_area_width = 200
@@ -189,6 +205,10 @@ def main(window):
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_w and player.jump_count < 2:
                     player.jump()
+                    if player.jump_count > 1:
+                        pygame.mixer.Sound.play(double_jumpfx)
+                    else:
+                        pygame.mixer.Sound.play(jumpfx)
 
         player.loop(FPS)
         spikes.loop()
