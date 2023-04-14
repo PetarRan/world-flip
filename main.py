@@ -5,18 +5,24 @@ import random
 import math
 from os import listdir
 from os.path import isfile, join
+from snake import Snake
 
 pygame.init()
-
-pygame.display.set_caption("World Flip")
 
 # Global Variables
 BG_COLOR = (255, 255, 255)
 WIDTH, HEIGHT = 1000, 800
+WINDOW_TITLE = "World Flip"
 FPS = 60
 PLAYER_VEL = 5
 
+## Game Window Setup
+pygame.display.set_caption(WINDOW_TITLE)
 window = pygame.display.set_mode((WIDTH, HEIGHT))
+pygame.display.set_icon(Snake().sprite)
+font = pygame.font.Font('assets/fonts/font.otf', 100)
+font_small = pygame.font.Font('assets/fonts/font.otf', 32)
+font_20 = pygame.font.Font('assets/fonts/font.otf', 20)
 
 
 def flip(sprites):
@@ -50,7 +56,7 @@ def get_block(size):
     path = join("assets", "wf_terrain", "tiles_terrain.png")
     image = pygame.image.load(path).convert_alpha()
     surface = pygame.Surface((size, size), pygame.SRCALPHA, 32)
-    rect = pygame.Rect(576, 288, size, size)  # 576 - [pos of tile block]
+    rect = pygame.Rect(144, 0, size, size)  # 576 - [pos of tile block]
     surface.blit(image, (0, 0), rect)
     return pygame.transform.scale2x(surface)
 
@@ -303,7 +309,7 @@ def handle_move(player, objects):
 
 def main(window):
     clock = pygame.time.Clock()
-    background, bg_image = get_background("bg.jpg")
+    background, bg_image = get_background("bg.png")
     block_size = 140
 
     player = Player(100, 100, 50, 50)
