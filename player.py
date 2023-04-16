@@ -112,3 +112,11 @@ class Player(pygame.sprite.Sprite):
 
     def draw(self, win, offset_x):
         win.blit(self.sprite, (self.rect.x - offset_x, self.rect.y))
+
+
+## Snake Sprite, icon
+class Snake: 
+    def __init__(self):
+        self.sprite = pygame.image.load('assets/wf_players/snake_main/dead.png')
+        self.position = pygame.Vector2()
+        self.position.xy

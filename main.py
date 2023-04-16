@@ -3,10 +3,9 @@ import sys
 import time
 import math
 from os.path import join
-from snake import Snake
-from player import Player
-from danger import Danger
-from block import Block, ExitDoor
+from player import Player, Snake
+from block import Block, ExitDoor, Danger
+from levels import StarterLevel
 from utils import *
 
 pygame.init()
@@ -113,7 +112,8 @@ def handle_move(player, objects):
         if obj and obj.name == "danger":
             player.make_hit()
         if obj and obj.name == "ExitDoor":
-            obj.show_level_complete_screen(window, main(window))
+            #TODO obj.show_level_complete_screen(window, )
+            print("New Level!")
 
 
 # World settings:
@@ -249,6 +249,8 @@ def game_over_screen(objects):
 def main(window):
     clock = pygame.time.Clock()
     background, bg_image = get_background("bg.png")
+    level = StarterLevel(WIDTH, HEIGHT, block_size)
+
 
     spikes = Danger(100, HEIGHT - block_size - 140, 70, 70)
     spikes.on()
@@ -333,18 +335,19 @@ def main(window):
                         pygame.mixer.Sound.play(jumpfx)
             if event.type == ROTATE_EVENT:
                 pygame.mixer.Sound.play(world_flipx)
-                rotate_world(objects)
+                rotate_world(level.objects_group)
             if event.type == FALL_OFF:
                 if player.rect.top > HEIGHT:
                     pygame.time.set_timer(FALL_OFF, 0)
-                    game_over_screen(objects)
+                    game_over_screen(level.objects_group)
                     return
+
                 
         player.loop(FPS)
         spikes.loop()
-        handle_move(player, objects)
+        handle_move(player, level.objects_group)
 
-        draw(window, background, bg_image, player, objects, offset_x)
+        draw(window, background, bg_image, player, level.objects_group, offset_x)
 
         if ((player.rect.right - offset_x >= WIDTH - scroll_area_width) and player.x_vel > 0) or (
                 (player.rect.left - offset_x <= scroll_area_width) and player.x_vel < 0):
