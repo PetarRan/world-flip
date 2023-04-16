@@ -10,9 +10,10 @@ def get_block(size):
     path = join("assets", "wf_terrain", "tiles_terrain.png")
     image = pygame.image.load(path).convert_alpha()
     surface = pygame.Surface((size, size), pygame.SRCALPHA, 32)
-    rect = pygame.Rect(144, 0, size, size)  # 576 - [pos of tile block]
+    rect = pygame.Rect(72, 432, size, size)  # 576 - [pos of tile block]
     surface.blit(image, (0, 0), rect)
     return pygame.transform.scale2x(surface)
+
 
 ## Loading sprite sheets with orientations from assets folders
 def load_sprite_sheets(dir1, name, width, height, direction=False):

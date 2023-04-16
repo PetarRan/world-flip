@@ -1,4 +1,7 @@
-import pygame, sys, time
+import pygame
+import sys
+import time
+import math
 from os.path import join
 from snake import Snake
 from player import Player
@@ -14,9 +17,9 @@ WIDTH, HEIGHT = 1000, 800
 WINDOW_TITLE = "World Flip"
 FPS = 60
 PLAYER_VEL = 5
-WHITE=(255,255,255)
+WHITE = (255, 255, 255)
 
-## Game Window Setup
+# Game Window Setup
 pygame.display.set_caption(WINDOW_TITLE)
 window = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_icon(Snake().sprite)
@@ -25,7 +28,7 @@ font = pygame.font.Font('assets/fonts/font.otf', 100)
 font_small = pygame.font.Font('assets/fonts/font.otf', 32)
 font_20 = pygame.font.Font('assets/fonts/font.otf', 20)
 title_bg = pygame.image.load('assets/wf_background/menu-bg.png')
-## Get SFXs
+# Get SFXs
 jumpfx = pygame.mixer.Sound("assets/sfx/jump.wav")
 double_jumpfx = pygame.mixer.Sound("assets/sfx/double_jump.wav")
 world_flipx = pygame.mixer.Sound("assets/sfx/world_flip.wav")
@@ -105,41 +108,96 @@ def handle_move(player, objects):
         if obj and obj.name == "danger":
             player.make_hit()
 
+
+# World settings:
+block_size = 140
+player = Player(100, 100, 50, 50)
+floor = [Block(i*block_size, HEIGHT - block_size, block_size)
+         for i in range(5)]
+wall = []
+for i in range(3):
+    block = floor[i]
+    rotated_block = Block(block.rect.x + 750, block.rect.y - 380, block_size)
+    rotated_block.image = pygame.transform.rotate(block.image, 90)
+    if i == 0:
+        wall.append(rotated_block)
+    else:
+        prev_block = wall[i-1]
+        offset_y = prev_block.rect.y - 3*block_size
+        new_block = Block(rotated_block.rect.x - i * block_size,
+                          rotated_block.rect.y + offset_y, block_size)
+        new_block.image = rotated_block.image
+        wall.append(new_block)
+
+world_group = pygame.sprite.Group()
+world_group.add(floor)
+world_group.add(wall)
+
+# End of World settings
+
+
+import math
+
+def rotate_world(objects):
+    # Convert the angle from degrees to radians
+    angle = math.radians(90)
+
+    # Calculate the center of the screen
+    center_x = WIDTH / 2
+    center_y = HEIGHT / 2
+
+    # Loop through all the blocks in the world
+    for block in objects:
+        # Calculate the offset from the center of the screen
+        x_offset = block.rect.x - center_x
+        y_offset = block.rect.y - center_y
+
+        # Calculate the hypotenuse from the block's position to the center of the screen
+        rho = math.sqrt(x_offset ** 2 + y_offset ** 2)
+
+        # Calculate the angle between the hypotenuse and the x axis
+        if x_offset >= 0:
+            theta = math.atan(y_offset / x_offset)
+        elif y_offset > 0:
+            theta = math.atan(y_offset / x_offset) + math.pi
+        else:
+            theta = math.atan(y_offset / x_offset) - math.pi
+
+        # Calculate the new angle after a 90 degree rotation
+        theta1 = theta + math.pi / 2
+
+        # Calculate the new coordinates of the block
+        new_x = rho * math.cos(theta1) + center_x
+        new_y = rho * math.sin(theta1) + center_y
+
+        # Round the coordinates to the nearest integer
+        new_x = round(new_x)
+        new_y = round(new_y)
+
+        # Update the block's position in the world
+        block.rect.x = new_x
+        block.rect.y = new_y
+
+
+
 ## Main ####
 
 
 def main(window):
     clock = pygame.time.Clock()
     background, bg_image = get_background("bg.png")
-    block_size = 140
+    ROTATE_EVENT = pygame.USEREVENT + 1
+    pygame.time.set_timer(ROTATE_EVENT, 5000)
 
-    player = Player(100, 100, 50, 50)
     spikes = Danger(100, HEIGHT - block_size - 140, 70, 70)
     spikes.on()
-    floor = [Block(i*block_size, HEIGHT - block_size, block_size)
-             for i in range(5)]
 
-    wall = []
-    for i in range(3):
-        block = floor[i]
-        rotated_block = Block(block.rect.x + 750, block.rect.y - 380, block_size)
-        rotated_block.image =  pygame.transform.rotate(block.image, 90)
-        if i == 0:
-            wall.append(rotated_block)
-        else:
-            prev_block = wall[i-1]
-            offset_y = prev_block.rect.y - 3*block_size
-            new_block = Block(rotated_block.rect.x - i * block_size, rotated_block.rect.y + offset_y, block_size)
-            new_block.image = rotated_block.image
-            wall.append(new_block)
-
-    
     objects = [*floor, *wall]
 
     offset_x = 0
     scroll_area_width = 200
 
-    ## Title Screen
+    # Title Screen
     last_time = time.time()
     splashScreenTimer = 0
     pygame.mixer.Sound.play(world_flipx)
@@ -159,8 +217,9 @@ def main(window):
         window.fill((255, 255, 255))
         # fill the start message on the top of the game
         startMessage = font_small.render("WORLD FLIP", True, (240, 95, 123))
-        window.blit(startMessage, (window.get_width()/2 - startMessage.get_width()/2, window.get_height()/2 - startMessage.get_height()/2))
-            
+        window.blit(startMessage, (window.get_width()/2 - startMessage.get_width() /
+                    2, window.get_height()/2 - startMessage.get_height()/2))
+
         # update display
         pygame.display.update()
         # wait for 10 seconds
@@ -172,7 +231,7 @@ def main(window):
         dt = time.time() - last_time
         dt *= 60
         last_time = time.time()
-        mouseX,mouseY = pygame.mouse.get_pos()  
+        mouseX, mouseY = pygame.mouse.get_pos()
         clicked = False
         keys = pygame.key.get_pressed()
         for event in pygame.event.get():
@@ -187,9 +246,10 @@ def main(window):
             titleScreen = False
 
         window.fill(WHITE)
-        window.blit(title_bg, (0,0)) 
+        window.blit(title_bg, (0, 0))
         startMessage = font_small.render("START", True, (255, 255, 255))
-        window.blit(startMessage, (window.get_width()/2 - startMessage.get_width()/2, 350))
+        window.blit(startMessage, (window.get_width() /
+                    2 - startMessage.get_width()/2, 350))
 
         pygame.display.update()
         pygame.time.delay(10)
@@ -197,7 +257,6 @@ def main(window):
     run = True
     while run:
         clock.tick(FPS)
-
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 run = False
@@ -209,6 +268,9 @@ def main(window):
                         pygame.mixer.Sound.play(double_jumpfx)
                     else:
                         pygame.mixer.Sound.play(jumpfx)
+            if event.type == ROTATE_EVENT:
+                pygame.mixer.Sound.play(world_flipx)
+                rotate_world(objects)
 
         player.loop(FPS)
         spikes.loop()
