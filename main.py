@@ -6,7 +6,7 @@ from os.path import join
 from snake import Snake
 from player import Player
 from danger import Danger
-from block import Block
+from block import Block, ExitDoor
 from utils import *
 
 pygame.init()
@@ -18,6 +18,10 @@ WINDOW_TITLE = "World Flip"
 FPS = 60
 PLAYER_VEL = 5
 WHITE = (255, 255, 255)
+ROTATE_EVENT = pygame.USEREVENT + 1
+ROTATE_INTERVAL = 5000
+ROTATE_POSITION = 0
+FALL_OFF = pygame.USEREVENT + 2
 
 # Game Window Setup
 pygame.display.set_caption(WINDOW_TITLE)
@@ -91,22 +95,25 @@ def handle_horizontal_collision(player, objects, dx):
 
 def handle_move(player, objects):
     keys = pygame.key.get_pressed()
-    collide_left = handle_horizontal_collision(
-        player, objects, -PLAYER_VEL * 2)
-    collide_right = handle_horizontal_collision(
-        player, objects, PLAYER_VEL * 2)
 
     player.x_vel = 0
+
+    collide_left = handle_horizontal_collision(player, objects, -PLAYER_VEL * 2)
+    collide_right = handle_horizontal_collision(player, objects, PLAYER_VEL * 2)
+
     if keys[pygame.K_a] and not collide_left:
         player.move_left(PLAYER_VEL)
     if keys[pygame.K_d] and not collide_right:
         player.move_right(PLAYER_VEL)
 
     collide_vertical = handle_vertical_collision(player, objects, player.y_vel)
+
     to_check = [collide_left, collide_right, *collide_vertical]
     for obj in to_check:
         if obj and obj.name == "danger":
             player.make_hit()
+        if obj and obj.name == "ExitDoor":
+            obj.show_level_complete_screen(window, main(window))
 
 
 # World settings:
@@ -129,18 +136,26 @@ for i in range(3):
         new_block.image = rotated_block.image
         wall.append(new_block)
 
+
+# Get the final block in the wall list, passing 90 because of the orientation of the platform the exit door is on
+exit_door = ExitDoor(wall[-1], block_size, 90)
+exit_door.rotate_block(90)
+
 world_group = pygame.sprite.Group()
 world_group.add(floor)
 world_group.add(wall)
+world_group.add(exit_door)
 
 # End of World settings
 
 
-import math
-
 def rotate_world(objects):
     # Convert the angle from degrees to radians
     angle = math.radians(90)
+    
+    global ROTATE_POSITION
+    ROTATE_POSITION +=1
+    ROTATE_POSITION %=4
 
     # Calculate the center of the screen
     center_x = WIDTH / 2
@@ -177,7 +192,55 @@ def rotate_world(objects):
         # Update the block's position in the world
         block.rect.x = new_x
         block.rect.y = new_y
+        block.rotate_block(-90)
 
+
+def restart_all(objects):
+    player.rect.x = 100
+    player.rect.y = 100
+    player.y_vel = 0
+    player.x_vel = 0
+    for i in range(4 - ROTATE_POSITION):
+        rotate_world(objects)
+    pygame.time.set_timer(ROTATE_EVENT, ROTATE_INTERVAL)
+    main(window)
+    
+
+def game_over_screen(objects):
+    game_over = True
+    last_time = time.time()
+    pygame.mixer.Sound.play(deadfx)
+    while game_over:
+        dt = time.time() - last_time
+        dt *= 60
+        last_time = time.time()
+        clicked = False
+        keys = pygame.key.get_pressed()
+        for event in pygame.event.get():
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                clicked = True
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+        if (clicked):
+            clicked = False
+            pygame.mixer.Sound.play(double_jumpfx)
+            game_over = False
+            restart_all(objects)
+
+            
+
+        window.fill(WHITE)
+        window.blit(title_bg, (0, 0))
+        restartMessage = font_small.render("RESTART", True, (255, 255, 255))
+        window.blit(restartMessage, (window.get_width() /
+                    2 - restartMessage.get_width()/2, 350))
+        gameOverMessage = font.render("GAME OVER", True, (255, 255, 255))
+        window.blit(gameOverMessage, (window.get_width() /
+                    2 - gameOverMessage.get_width()/2, 200))
+
+        pygame.display.update()
+        pygame.time.delay(10)
 
 
 ## Main ####
@@ -186,13 +249,11 @@ def rotate_world(objects):
 def main(window):
     clock = pygame.time.Clock()
     background, bg_image = get_background("bg.png")
-    ROTATE_EVENT = pygame.USEREVENT + 1
-    pygame.time.set_timer(ROTATE_EVENT, 5000)
 
     spikes = Danger(100, HEIGHT - block_size - 140, 70, 70)
     spikes.on()
 
-    objects = [*floor, *wall]
+    objects = [*floor, *wall, exit_door]
 
     offset_x = 0
     scroll_area_width = 200
@@ -244,6 +305,8 @@ def main(window):
             clicked = False
             pygame.mixer.Sound.play(double_jumpfx)
             titleScreen = False
+            pygame.time.set_timer(ROTATE_EVENT, ROTATE_INTERVAL)
+            pygame.time.set_timer(FALL_OFF, 100)
 
         window.fill(WHITE)
         window.blit(title_bg, (0, 0))
@@ -271,7 +334,12 @@ def main(window):
             if event.type == ROTATE_EVENT:
                 pygame.mixer.Sound.play(world_flipx)
                 rotate_world(objects)
-
+            if event.type == FALL_OFF:
+                if player.rect.top > HEIGHT:
+                    pygame.time.set_timer(FALL_OFF, 0)
+                    game_over_screen(objects)
+                    return
+                
         player.loop(FPS)
         spikes.loop()
         handle_move(player, objects)
