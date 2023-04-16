@@ -5,7 +5,7 @@ import math
 from os.path import join
 from player import Player, Snake
 from block import Block, ExitDoor, Danger
-from levels import StarterLevel
+from levels import *
 from utils import *
 
 pygame.init()
@@ -97,8 +97,10 @@ def handle_move(player, objects):
 
     player.x_vel = 0
 
-    collide_left = handle_horizontal_collision(player, objects, -PLAYER_VEL * 2)
-    collide_right = handle_horizontal_collision(player, objects, PLAYER_VEL * 2)
+    collide_left = handle_horizontal_collision(
+        player, objects, -PLAYER_VEL * 2)
+    collide_right = handle_horizontal_collision(
+        player, objects, PLAYER_VEL * 2)
 
     if keys[pygame.K_a] and not collide_left:
         player.move_left(PLAYER_VEL)
@@ -112,50 +114,20 @@ def handle_move(player, objects):
         if obj and obj.name == "danger":
             player.make_hit()
         if obj and obj.name == "ExitDoor":
-            #TODO obj.show_level_complete_screen(window, )
-            print("New Level!")
+            obj.show_level_complete_screen(window, Level1)
 
 
-# World settings:
 block_size = 140
 player = Player(100, 100, 50, 50)
-floor = [Block(i*block_size, HEIGHT - block_size, block_size)
-         for i in range(5)]
-wall = []
-for i in range(3):
-    block = floor[i]
-    rotated_block = Block(block.rect.x + 750, block.rect.y - 380, block_size)
-    rotated_block.image = pygame.transform.rotate(block.image, 90)
-    if i == 0:
-        wall.append(rotated_block)
-    else:
-        prev_block = wall[i-1]
-        offset_y = prev_block.rect.y - 3*block_size
-        new_block = Block(rotated_block.rect.x - i * block_size,
-                          rotated_block.rect.y + offset_y, block_size)
-        new_block.image = rotated_block.image
-        wall.append(new_block)
-
-
-# Get the final block in the wall list, passing 90 because of the orientation of the platform the exit door is on
-exit_door = ExitDoor(wall[-1], block_size, 90)
-exit_door.rotate_block(90)
-
-world_group = pygame.sprite.Group()
-world_group.add(floor)
-world_group.add(wall)
-world_group.add(exit_door)
-
-# End of World settings
 
 
 def rotate_world(objects):
     # Convert the angle from degrees to radians
     angle = math.radians(90)
-    
+
     global ROTATE_POSITION
-    ROTATE_POSITION +=1
-    ROTATE_POSITION %=4
+    ROTATE_POSITION += 1
+    ROTATE_POSITION %= 4
 
     # Calculate the center of the screen
     center_x = WIDTH / 2
@@ -204,7 +176,7 @@ def restart_all(objects):
         rotate_world(objects)
     pygame.time.set_timer(ROTATE_EVENT, ROTATE_INTERVAL)
     main(window)
-    
+
 
 def game_over_screen(objects):
     game_over = True
@@ -228,8 +200,6 @@ def game_over_screen(objects):
             game_over = False
             restart_all(objects)
 
-            
-
         window.fill(WHITE)
         window.blit(title_bg, (0, 0))
         restartMessage = font_small.render("RESTART", True, (255, 255, 255))
@@ -243,6 +213,39 @@ def game_over_screen(objects):
         pygame.time.delay(10)
 
 
+def show_level_complete_screen(self, window, next_level):
+    # clear the screen
+    window.fill((255, 255, 255))
+
+    # render the "LEVEL COMPLETE" message
+    font = pygame.font.Font(None, 64)
+    text = font.render("LEVEL COMPLETE", True, (0, 0, 0))
+    text_rect = text.get_rect(center=window.get_rect().center)
+    window.blit(text, text_rect)
+
+    # render the "CONTINUE TO NEXT LEVEL" message
+    font = pygame.font.Font(None, 32)
+    text = font.render("CONTINUE TO NEXT LEVEL", True, (255, 255, 255))
+    text_rect = text.get_rect(
+        center=(window.get_width() // 2, window.get_height() // 2 + 50))
+    window.blit(text, text_rect)
+
+    # update the screen
+    pygame.display.update()
+
+    # wait for user input
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                # check if the user clicked on the "CONTINUE TO NEXT LEVEL" message
+                if text_rect.collidepoint(event.pos):
+                    self.current_level = next_level
+                    return
+
+
 ## Main ####
 
 
@@ -251,11 +254,8 @@ def main(window):
     background, bg_image = get_background("bg.png")
     level = StarterLevel(WIDTH, HEIGHT, block_size)
 
-
     spikes = Danger(100, HEIGHT - block_size - 140, 70, 70)
     spikes.on()
-
-    objects = [*floor, *wall, exit_door]
 
     offset_x = 0
     scroll_area_width = 200
@@ -342,12 +342,12 @@ def main(window):
                     game_over_screen(level.objects_group)
                     return
 
-                
         player.loop(FPS)
         spikes.loop()
         handle_move(player, level.objects_group)
 
-        draw(window, background, bg_image, player, level.objects_group, offset_x)
+        draw(window, background, bg_image, player,
+             level.objects_group, offset_x)
 
         if ((player.rect.right - offset_x >= WIDTH - scroll_area_width) and player.x_vel > 0) or (
                 (player.rect.left - offset_x <= scroll_area_width) and player.x_vel < 0):
