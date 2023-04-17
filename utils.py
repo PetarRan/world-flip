@@ -14,6 +14,14 @@ def get_block(size):
     surface.blit(image, (0, 0), rect)
     return pygame.transform.scale2x(surface)
 
+def get_space_block(size):
+    path = join("assets", "wf_terrain", "tiles_terrain.png")
+    image = pygame.image.load(path).convert_alpha()
+    surface = pygame.Surface((size, size), pygame.SRCALPHA, 32)
+    rect = pygame.Rect(504, 288, size, size)  # 576 - [pos of tile block]
+    surface.blit(image, (0, 0), rect)
+    return pygame.transform.scale2x(surface)
+
 def get_door(size):
     path = join("assets", "wf_terrain", "door", "door.png")
     image = pygame.image.load(path).convert_alpha()

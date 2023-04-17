@@ -37,6 +37,13 @@ double_jumpfx = pygame.mixer.Sound("assets/sfx/double_jump.wav")
 world_flipx = pygame.mixer.Sound("assets/sfx/world_flip.wav")
 deadfx = pygame.mixer.Sound("assets/sfx/death.wav")
 
+block_size = 140
+start = StarterLevel(WIDTH, HEIGHT, block_size)
+level1 = Level1(WIDTH, HEIGHT, block_size)
+level2 = Level2(WIDTH, HEIGHT, block_size)
+level3 = Level3(WIDTH, HEIGHT, block_size)
+current_level = start
+
 
 def get_background(name):
     image = pygame.image.load(join("assets", "wf_background", name))
@@ -93,6 +100,7 @@ def handle_horizontal_collision(player, objects, dx):
 
 
 def handle_move(player, objects):
+    global current_level
     keys = pygame.key.get_pressed()
 
     player.x_vel = 0
@@ -115,11 +123,12 @@ def handle_move(player, objects):
             player.make_hit()
             player.dead = True
         if obj and obj.name == "ExitDoor":
-            show_level_complete_screen(window, Level1)
+            current_level = show_level_complete_screen(window, current_level)
+            restart_all(objects)
+            player.rect.x = current_level.player.rect.x
+            player.rect.y = current_level.player.rect.y
+            main(window)
 
-
-block_size = 140
-player = Player(100, 100, 50, 50)
 
 
 def rotate_world(objects):
@@ -169,10 +178,11 @@ def rotate_world(objects):
 
 
 def restart_all(objects):
-    player.rect.x = 100
-    player.rect.y = 100
+    player = current_level.player
     player.y_vel = 0
     player.x_vel = 0
+    player.fall_count = 0
+    player.dead = False
     for i in range(4 - ROTATE_POSITION):
         rotate_world(objects)
     pygame.time.set_timer(ROTATE_EVENT, ROTATE_INTERVAL)
@@ -199,6 +209,7 @@ def game_over_screen(objects):
             clicked = False
             pygame.mixer.Sound.play(double_jumpfx)
             game_over = False
+            print("Restarted!")
             restart_all(objects)
 
         window.fill(WHITE)
@@ -214,8 +225,7 @@ def game_over_screen(objects):
         pygame.time.delay(10)
 
 
-def show_level_complete_screen(window, next_level):
-    global current_level
+def show_level_complete_screen(window, level):
     # clear the screen
     window.fill((255, 255, 255))
 
@@ -244,16 +254,70 @@ def show_level_complete_screen(window, next_level):
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 # check if the user clicked on the "CONTINUE TO NEXT LEVEL" message
                 if text_rect.collidepoint(event.pos):
-                    current_level = next_level
+                    if level == start:
+                        print("Reached level 1")
+                        return level1
+                    elif level == level1:
+                        print("Reached level 2")
+                        return level2
+                    elif level == level2:
+                        print("Reached level 3")
+                        return level3
+                    else:
+                        show_game_complete_screen(window)
+
+
+def show_game_complete_screen(window):
+    # Fill the screen with white color
+    window.fill((255, 255, 255))
+    
+    # Create a font object for the title and render the text
+    font = pygame.font.Font('assets/fonts/font.otf', 100)
+    title = font.render("Congratulations!", True, (0, 0, 0))
+    
+    # Create a font object for the message and render the text
+    font_small = pygame.font.Font('assets/fonts/font.otf', 32)
+    message = font_small.render("You have completed the game!", True, (0, 0, 0))
+    
+    # Create a font object for the instructions and render the text
+    font_20 = pygame.font.Font('assets/fonts/font.otf', 20)
+    instructions = font_20.render("Press ESC to quit", True, (0, 0, 0))
+    
+    # Calculate the positions of the text objects
+    title_rect = title.get_rect()
+    title_rect.center = (WIDTH // 2, HEIGHT // 4)
+    
+    message_rect = message.get_rect()
+    message_rect.center = (WIDTH // 2, HEIGHT // 2)
+    
+    instructions_rect = instructions.get_rect()
+    instructions_rect.center = (WIDTH // 2, HEIGHT - 100)
+    
+    # Draw the text objects on the screen
+    window.blit(title, title_rect)
+    window.blit(message, message_rect)
+    window.blit(instructions, instructions_rect)
+    
+    # Update the display
+    pygame.display.flip()
+    
+    # Wait for the user to press SPACE or ESC
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.K_ESCAPE or event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
 
 
 ## Main ####
 
-current_level = Level1(WIDTH, HEIGHT, block_size)
-
 def main(window):
+    player = Player(current_level.player.rect.x, current_level.player.rect.y, 50, 50)
     clock = pygame.time.Clock()
-    background, bg_image = get_background("bg.png")
+    if current_level.name == "LvlSpace":
+        background, bg_image = get_background("bg_space.png")
+    else:
+        background, bg_image = get_background("bg.png")
     level = current_level
 
     offset_x = 0
