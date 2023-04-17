@@ -37,7 +37,7 @@ class StarterLevel:
         self.objects_group = objects_group
         self.player = player
         self.exit_door = exit_door
-        self.name = "tutorial"
+        self.name = "Lvl1"
 
 
 class Level1:
@@ -98,7 +98,7 @@ class Level1:
         self.objects_group = objects_group
         self.player = player
         self.exit_door = exit_door
-        self.name = "Lvl1"
+        self.name = "Lvl2"
 
 
 class Level2:
@@ -168,7 +168,7 @@ class Level2:
         self.objects_group = objects_group
         self.player = player
         self.exit_door = exit_door
-        self.name = "Demo"
+        self.name = "Lvl3"
 
 
 class Level3:

@@ -21,6 +21,7 @@ ROTATE_EVENT = pygame.USEREVENT + 1
 ROTATE_INTERVAL = 5000
 ROTATE_POSITION = 0
 FALL_OFF = pygame.USEREVENT + 2
+COUNTER = 0
 
 # Game Window Setup
 pygame.display.set_caption(WINDOW_TITLE)
@@ -31,6 +32,11 @@ font = pygame.font.Font('assets/fonts/font.otf', 100)
 font_small = pygame.font.Font('assets/fonts/font.otf', 32)
 font_20 = pygame.font.Font('assets/fonts/font.otf', 20)
 title_bg = pygame.image.load('assets/wf_background/menu-bg.png')
+lvl0_bg = pygame.image.load('assets/wf_background/level0.png')
+lvl1_bg = pygame.image.load('assets/wf_background/level1.png')
+lvl2_bg = pygame.image.load('assets/wf_background/level2.png')
+lvl3_bg = pygame.image.load('assets/wf_background/level3.png')
+end_bg = pygame.image.load('assets/wf_background/end_bg.png')
 # Get SFXs
 jumpfx = pygame.mixer.Sound("assets/sfx/jump.wav")
 double_jumpfx = pygame.mixer.Sound("assets/sfx/double_jump.wav")
@@ -130,7 +136,6 @@ def handle_move(player, objects):
             main(window)
 
 
-
 def rotate_world(objects):
     # Convert the angle from degrees to radians
     angle = math.radians(90)
@@ -209,7 +214,6 @@ def game_over_screen(objects):
             clicked = False
             pygame.mixer.Sound.play(double_jumpfx)
             game_over = False
-            print("Restarted!")
             restart_all(objects)
 
         window.fill(WHITE)
@@ -226,18 +230,48 @@ def game_over_screen(objects):
 
 
 def show_level_complete_screen(window, level):
-    # clear the screen
-    window.fill((255, 255, 255))
 
     # render the "LEVEL COMPLETE" message
     font = pygame.font.Font(None, 64)
-    text = font.render("LEVEL COMPLETE", True, (0, 0, 0))
+    text = font.render("LEVEL COMPLETE", True, (255, 255, 255))
     text_rect = text.get_rect(center=window.get_rect().center)
     window.blit(text, text_rect)
 
+    # Level Description and tip
+    if level.name == "LvlSpace":
+        description = font_20.render(
+            "You have finished the Demo! Great job. You've reached the spaceship.", True, (255, 255, 255))
+        description_rect = description.get_rect(
+            center=window.get_rect().center)
+        window.fill(WHITE)
+        window.blit(lvl3_bg, (0, 0))
+    elif level.name == "Lvl1":
+        description = font_20.render("You got the jist! Tip: Before the world flips, jump once in case the platform moves.", True, (255, 255, 255))
+        description_rect = description.get_rect(
+            center=window.get_rect().center)
+        window.fill(WHITE)
+        window.blit(lvl0_bg, (0, 0))
+    elif level.name == "Lvl2":
+        description = font_20.render("Good job! If you don't know where to go. Wait for the world to rotate!", True, (0, 0, 0))
+        description_rect = description.get_rect(
+            center=window.get_rect().center)
+        window.fill(WHITE)
+        window.blit(lvl1_bg, (0, 0))
+    elif level.name == "Lvl3":
+        description = font_20.render("Reach the spaceship. Dont wander too far from spawn. World flips can surprise you.", True, (255, 255, 255))
+        description_rect = description.get_rect(
+            center=window.get_rect().center)
+        window.fill(WHITE)
+        window.blit(lvl2_bg, (0, 0))
+    else:
+        window.fill((255, 255, 255))
+    # Background set
+
+    window.blit(description, description_rect)
+
     # render the "CONTINUE TO NEXT LEVEL" message
     font = pygame.font.Font(None, 32)
-    text = font.render("CONTINUE TO NEXT LEVEL", True, (0, 0, 0))
+    text = font.render("CONTINUE TO NEXT LEVEL", True, (255, 255, 255))
     text_rect = text.get_rect(
         center=(window.get_width() // 2, window.get_height() // 2 + 50))
     window.blit(text, text_rect)
@@ -269,38 +303,39 @@ def show_level_complete_screen(window, level):
 
 def show_game_complete_screen(window):
     # Fill the screen with white color
-    window.fill((255, 255, 255))
-    
+    window.blit(end_bg, (0, 0))
+
     # Create a font object for the title and render the text
     font = pygame.font.Font('assets/fonts/font.otf', 100)
     title = font.render("Congratulations!", True, (0, 0, 0))
-    
+
     # Create a font object for the message and render the text
     font_small = pygame.font.Font('assets/fonts/font.otf', 32)
-    message = font_small.render("You have completed the game!", True, (0, 0, 0))
-    
+    message = font_small.render(
+        "You have completed the Demo! Stay updated for more!", True, (0, 0, 0))
+
     # Create a font object for the instructions and render the text
     font_20 = pygame.font.Font('assets/fonts/font.otf', 20)
     instructions = font_20.render("Press ESC to quit", True, (0, 0, 0))
-    
+
     # Calculate the positions of the text objects
     title_rect = title.get_rect()
     title_rect.center = (WIDTH // 2, HEIGHT // 4)
-    
+
     message_rect = message.get_rect()
     message_rect.center = (WIDTH // 2, HEIGHT // 2)
-    
+
     instructions_rect = instructions.get_rect()
     instructions_rect.center = (WIDTH // 2, HEIGHT - 100)
-    
+
     # Draw the text objects on the screen
     window.blit(title, title_rect)
     window.blit(message, message_rect)
     window.blit(instructions, instructions_rect)
-    
+
     # Update the display
     pygame.display.flip()
-    
+
     # Wait for the user to press SPACE or ESC
     while True:
         for event in pygame.event.get():
@@ -312,7 +347,10 @@ def show_game_complete_screen(window):
 ## Main ####
 
 def main(window):
-    player = Player(current_level.player.rect.x, current_level.player.rect.y, 50, 50)
+    global COUNTER
+
+    player = Player(current_level.player.rect.x,
+                    current_level.player.rect.y, 50, 50)
     clock = pygame.time.Clock()
     if current_level.name == "LvlSpace":
         background, bg_image = get_background("bg_space.png")
@@ -387,6 +425,8 @@ def main(window):
     run = True
     while run:
         clock.tick(FPS)
+        COUNTER += 1
+        COUNTER %= 300
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 run = False
@@ -399,6 +439,7 @@ def main(window):
                     else:
                         pygame.mixer.Sound.play(jumpfx)
             if event.type == ROTATE_EVENT:
+                COUNTER = 0
                 pygame.mixer.Sound.play(world_flipx)
                 rotate_world(level.objects_group)
             if event.type == FALL_OFF:
