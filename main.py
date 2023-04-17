@@ -218,10 +218,12 @@ def game_over_screen(objects):
 
         window.fill(WHITE)
         window.blit(title_bg, (0, 0))
-        restartMessage = font_small.render("RESTART", True, (255, 255, 255))
+        restartMessage = font_small.render(" RESTART ", True, (255, 255, 255), (0,0,0))
+        restartMessage.set_alpha(128)
         window.blit(restartMessage, (window.get_width() /
                     2 - restartMessage.get_width()/2, 350))
-        gameOverMessage = font.render("GAME OVER", True, (255, 255, 255))
+        gameOverMessage = font.render(" GAME OVER ", True, (255, 255, 255), (0,0,0))
+        gameOverMessage.set_alpha(128)
         window.blit(gameOverMessage, (window.get_width() /
                     2 - gameOverMessage.get_width()/2, 200))
 
@@ -233,32 +235,33 @@ def show_level_complete_screen(window, level):
 
     # render the "LEVEL COMPLETE" message
     font = pygame.font.Font(None, 64)
-    text = font.render("LEVEL COMPLETE", True, (255, 255, 255))
+    text = font.render(" LEVEL COMPLETE ", True, (255, 255, 255), (0,0,0))
+    text.set_alpha(128)
     text_rect = text.get_rect(center=window.get_rect().center)
     window.blit(text, text_rect)
 
     # Level Description and tip
     if level.name == "LvlSpace":
         description = font_20.render(
-            "You have finished the Demo! Great job. You've reached the spaceship.", True, (255, 255, 255))
+            " You have finished the Demo! Great job. You've reached the spaceship. ", True, (255, 255, 255) , (0,0,0))
         description_rect = description.get_rect(
             center=window.get_rect().center)
         window.fill(WHITE)
         window.blit(lvl3_bg, (0, 0))
     elif level.name == "Lvl1":
-        description = font_20.render("You got the jist! Tip: Before the world flips, jump once in case the platform moves.", True, (255, 255, 255))
+        description = font_20.render(" You got the jist! Tip: Before the world flips, jump once in case the platform moves. ", True, (255, 255, 255) , (0,0,0))
         description_rect = description.get_rect(
             center=window.get_rect().center)
         window.fill(WHITE)
         window.blit(lvl0_bg, (0, 0))
     elif level.name == "Lvl2":
-        description = font_20.render("Good job! If you don't know where to go. Wait for the world to rotate!", True, (0, 0, 0))
+        description = font_20.render(" Good job! If you don't know where to go. Wait for the world to rotate! ", True, (255, 255, 255) , (0,0,0))
         description_rect = description.get_rect(
             center=window.get_rect().center)
         window.fill(WHITE)
         window.blit(lvl1_bg, (0, 0))
     elif level.name == "Lvl3":
-        description = font_20.render("Reach the spaceship. Dont wander too far from spawn. World flips can surprise you.", True, (255, 255, 255))
+        description = font_20.render(" Reach the spaceship. Dont wander too far from spawn. World flips can surprise you. ", True, (255, 255, 255) , (0,0,0))
         description_rect = description.get_rect(
             center=window.get_rect().center)
         window.fill(WHITE)
@@ -267,11 +270,13 @@ def show_level_complete_screen(window, level):
         window.fill((255, 255, 255))
     # Background set
 
+    description.set_alpha(128)
     window.blit(description, description_rect)
 
     # render the "CONTINUE TO NEXT LEVEL" message
     font = pygame.font.Font(None, 32)
-    text = font.render("CONTINUE TO NEXT LEVEL", True, (255, 255, 255))
+    text = font.render(" CONTINUE TO NEXT LEVEL ", True, (255, 255, 255), (0,0,0))
+    text.set_alpha(128)
     text_rect = text.get_rect(
         center=(window.get_width() // 2, window.get_height() // 2 + 50))
     window.blit(text, text_rect)
@@ -289,13 +294,10 @@ def show_level_complete_screen(window, level):
                 # check if the user clicked on the "CONTINUE TO NEXT LEVEL" message
                 if text_rect.collidepoint(event.pos):
                     if level == start:
-                        print("Reached level 1")
                         return level1
                     elif level == level1:
-                        print("Reached level 2")
                         return level2
                     elif level == level2:
-                        print("Reached level 3")
                         return level3
                     else:
                         show_game_complete_screen(window)
@@ -307,16 +309,19 @@ def show_game_complete_screen(window):
 
     # Create a font object for the title and render the text
     font = pygame.font.Font('assets/fonts/font.otf', 100)
-    title = font.render("Congratulations!", True, (0, 0, 0))
+    title = font.render(" Congratulations! ", True, (255, 255, 255), (0, 0, 0))
+    title.set_alpha(128)
 
     # Create a font object for the message and render the text
     font_small = pygame.font.Font('assets/fonts/font.otf', 32)
     message = font_small.render(
-        "You have completed the Demo! Stay updated for more!", True, (0, 0, 0))
+        " You have completed the Demo! Stay updated for more! ", True, (255, 255, 255), (0, 0, 0))
+    message.set_alpha(128)
 
     # Create a font object for the instructions and render the text
     font_20 = pygame.font.Font('assets/fonts/font.otf', 20)
-    instructions = font_20.render("Press ESC to quit", True, (0, 0, 0))
+    instructions = font_20.render(" Press ESC to quit ", True, (255, 255, 255), (0, 0, 0))
+    instructions.set_alpha(128)
 
     # Calculate the positions of the text objects
     title_rect = title.get_rect()
@@ -415,7 +420,7 @@ def main(window):
 
         window.fill(WHITE)
         window.blit(title_bg, (0, 0))
-        startMessage = font_small.render("START", True, (255, 255, 255))
+        startMessage = font_small.render(" START ", True, (255, 255, 255), (0,0,0))
         window.blit(startMessage, (window.get_width() /
                     2 - startMessage.get_width()/2, 350))
 
