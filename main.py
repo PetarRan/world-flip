@@ -113,8 +113,9 @@ def handle_move(player, objects):
     for obj in to_check:
         if obj and obj.name == "danger":
             player.make_hit()
+            player.dead = True
         if obj and obj.name == "ExitDoor":
-            obj.show_level_complete_screen(window, Level1)
+            show_level_complete_screen(window, Level1)
 
 
 block_size = 140
@@ -213,7 +214,8 @@ def game_over_screen(objects):
         pygame.time.delay(10)
 
 
-def show_level_complete_screen(self, window, next_level):
+def show_level_complete_screen(window, next_level):
+    global current_level
     # clear the screen
     window.fill((255, 255, 255))
 
@@ -225,7 +227,7 @@ def show_level_complete_screen(self, window, next_level):
 
     # render the "CONTINUE TO NEXT LEVEL" message
     font = pygame.font.Font(None, 32)
-    text = font.render("CONTINUE TO NEXT LEVEL", True, (255, 255, 255))
+    text = font.render("CONTINUE TO NEXT LEVEL", True, (0, 0, 0))
     text_rect = text.get_rect(
         center=(window.get_width() // 2, window.get_height() // 2 + 50))
     window.blit(text, text_rect)
@@ -242,23 +244,22 @@ def show_level_complete_screen(self, window, next_level):
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 # check if the user clicked on the "CONTINUE TO NEXT LEVEL" message
                 if text_rect.collidepoint(event.pos):
-                    self.current_level = next_level
-                    return
+                    current_level = next_level
 
 
 ## Main ####
 
+current_level = Level1(WIDTH, HEIGHT, block_size)
 
 def main(window):
     clock = pygame.time.Clock()
     background, bg_image = get_background("bg.png")
-    level = StarterLevel(WIDTH, HEIGHT, block_size)
-
-    spikes = Danger(100, HEIGHT - block_size - 140, 70, 70)
-    spikes.on()
+    level = current_level
 
     offset_x = 0
     scroll_area_width = 200
+    offset_y = 0
+    scroll_area_height = 200
 
     # Title Screen
     last_time = time.time()
@@ -337,13 +338,13 @@ def main(window):
                 pygame.mixer.Sound.play(world_flipx)
                 rotate_world(level.objects_group)
             if event.type == FALL_OFF:
-                if player.rect.top > HEIGHT:
+                if player.rect.top > HEIGHT or player.dead:
+                    player.dead = False
                     pygame.time.set_timer(FALL_OFF, 0)
                     game_over_screen(level.objects_group)
                     return
 
         player.loop(FPS)
-        spikes.loop()
         handle_move(player, level.objects_group)
 
         draw(window, background, bg_image, player,
@@ -352,6 +353,8 @@ def main(window):
         if ((player.rect.right - offset_x >= WIDTH - scroll_area_width) and player.x_vel > 0) or (
                 (player.rect.left - offset_x <= scroll_area_width) and player.x_vel < 0):
             offset_x += player.x_vel
+        if ((player.rect.bottom - offset_y >= HEIGHT - scroll_area_height) and player.y_vel > 0):
+            offset_y += player.y_vel
 
     pygame.quit()
     quit()

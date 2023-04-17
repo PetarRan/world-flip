@@ -22,6 +22,14 @@ def get_door(size):
     surface.blit(image, (0, 0), rect)
     return pygame.transform.scale2x(surface)
 
+def get_inner_blcok(size):
+    path = join("assets", "wf_terrain", "tiles_terrain.png")
+    image = pygame.image.load(path).convert_alpha()
+    surface = pygame.Surface((size, size), pygame.SRCALPHA, 32)
+    rect = pygame.Rect(144, 576, size, size) 
+    surface.blit(image, (0, 0), rect)
+    return pygame.transform.scale2x(surface)
+
 ## Loading sprite sheets with orientations from assets folders
 def load_sprite_sheets(dir1, name, width, height, direction=False):
     path = join("assets", dir1, name)
